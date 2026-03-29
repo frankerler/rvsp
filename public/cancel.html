@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cancel RSVP — Design & AI</title>
+  <style>
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-SemiBold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #faf9f7; color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #fff; border: 1px solid #eae8e4;
+      border-radius: 20px; padding: 48px 40px;
+      max-width: 440px; width: 100%; text-align: center;
+    }
+    h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+    p { font-size: 16px; color: #888; line-height: 1.5; margin-bottom: 32px; }
+    .btn {
+      display: inline-block; font-family: inherit;
+      font-size: 16px; font-weight: 600;
+      padding: 16px 36px; border: none; border-radius: 14px;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+      text-decoration: none;
+    }
+    .btn:active { transform: scale(0.985); }
+    .btn-cancel { background: #c0392b; color: #fff; }
+    .btn-cancel:hover { opacity: 0.8; }
+    .btn-back { background: #1a1a1a; color: #faf9f7; }
+    .btn-back:hover { opacity: 0.75; }
+    .btn:disabled { opacity: 0.25; cursor: not-allowed; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="confirmView">
+      <h1>Cancel RSVP?</h1>
+      <p>This will free up your spot for someone else. You can always RSVP again if spots are available.</p>
+      <button class="btn btn-cancel" id="cancelBtn" onclick="cancelRsvp()">Yes, cancel my spot</button>
+    </div>
+    <div id="doneView" class="hidden">
+      <h1>Spot released.</h1>
+      <p>Your RSVP has been cancelled. Thanks for letting us know.</p>
+      <a href="/" class="btn btn-back">Back to events</a>
+    </div>
+    <div id="errorView" class="hidden">
+      <h1>Not found.</h1>
+      <p>This RSVP was already cancelled or the link is invalid.</p>
+      <a href="/" class="btn btn-back">Back to events</a>
+    </div>
+  </div>
+  <script>
+    const token = window.location.pathname.split("/cancel/")[1];
+    async function cancelRsvp() {
+      const btn = document.getElementById("cancelBtn");
+      btn.disabled = true; btn.textContent = "Cancelling...";
+      try {
+        const res = await fetch("/api/rsvp/" + token, { method: "DELETE" });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById("confirmView").classList.add("hidden");
+          document.getElementById("doneView").classList.remove("hidden");
+        } else {
+          document.getElementById("confirmView").classList.add("hidden");
+          document.getElementById("errorView").classList.remove("hidden");
+        }
+      } catch {
+        btn.textContent = "Yes, cancel my spot"; btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

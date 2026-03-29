@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Event — Design & AI</title>
+  <style>
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-SemiBold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+    @font-face { font-family: 'Westernic'; src: url('/fonts/westernic.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #faf9f7; color: #1a1a1a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Nav */
+    nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 28px 48px;
+      border-bottom: 1px solid #eae8e4;
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(250,249,247,0.9);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    }
+    .nav-logo {
+      font-size: 14px; font-weight: 700; letter-spacing: 0.02em;
+      text-transform: uppercase; text-decoration: none; color: #1a1a1a;
+    }
+    .nav-right { font-size: 13px; color: #999; }
+
+    /* Hero */
+    .hero {
+      max-width: 900px; margin: 0 auto;
+      padding: 120px 48px 0;
+    }
+
+    .hero-badge {
+      display: inline-block; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      background: #1a1a1a; color: #faf9f7;
+      padding: 6px 16px; border-radius: 100px;
+      margin-bottom: 28px;
+    }
+
+    .hero h1 {
+      font-family: 'Westernic', serif;
+      font-size: 78px;
+      font-weight: 400; line-height: 1.05;
+      letter-spacing: -0.02em;
+      color: #39ff14;
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+
+    .hero-sub {
+      font-size: 24px; color: #888;
+      line-height: 1.2; max-width: 500px;
+      margin-bottom: 56px;
+    }
+
+    /* Two-col: details + RSVP */
+    .grid {
+      max-width: 960px; margin: 0 auto;
+      padding: 0 48px 0;
+      position: relative;
+    }
+    .grid-bg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%; max-width: 900px;
+      opacity: 1;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .grid-inner { position: relative; z-index: 1; }
+
+    .grid-inner {
+      background: #1a1a1a;
+      border-radius: 36px;
+      padding: 48px 44px;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      color: #fff;
+    }
+
+    /* Details */
+    .details {
+      padding: 0;
+    }
+
+    .detail-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 32px; margin-bottom: 28px;
+    }
+
+    .detail-item .label {
+      font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: #39ff14; margin-bottom: 6px;
+    }
+    .detail-item .value {
+      font-size: 17px; font-weight: 600; line-height: 1.35; color: #fff;
+    }
+    .detail-item .sub {
+      font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 2px;
+    }
+    .map-link {
+      color: rgba(255,255,255,0.5); text-decoration: underline;
+      text-underline-offset: 2px; text-decoration-color: rgba(255,255,255,0.25);
+      transition: color 0.2s;
+    }
+    .map-link:hover { color: #fff; text-decoration-color: #fff; }
+
+    .spots-block {
+      display: flex; align-items: baseline; gap: 10px;
+      padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .spots-number {
+      font-size: 48px; font-weight: 700; letter-spacing: -0.03em;
+      line-height: 1; color: #fff;
+    }
+    .spots-number.low { color: #e74c3c; }
+    .spots-label { font-size: 15px; color: rgba(255,255,255,0.7); }
+    .waitlist-note { font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 10px; }
+
+    /* RSVP */
+    .rsvp {
+      background: rgba(255,255,255,0.08);
+      border-radius: 24px;
+      padding: 36px 32px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .rsvp h2 {
+      font-size: 22px; font-weight: 700;
+      letter-spacing: -0.02em; margin-bottom: 6px; color: #fff;
+    }
+    .rsvp .rsvp-sub {
+      font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.5;
+      margin-bottom: 28px;
+    }
+
+    .rsvp-form { display: flex; flex-direction: column; gap: 12px; }
+
+    .rsvp-form input {
+      width: 100%; font-family: inherit;
+      font-size: 16px; font-weight: 400;
+      padding: 16px 18px;
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 14px;
+      background: rgba(255,255,255,0.06); color: #fff; outline: none;
+      transition: border-color 0.2s;
+    }
+    .rsvp-form input:focus { border-color: rgba(255,255,255,0.4); }
+    .rsvp-form input::placeholder { color: rgba(255,255,255,0.3); }
+
+    .submit-btn {
+      font-family: inherit;
+      font-size: 16px; font-weight: 600;
+      padding: 16px 28px; border: none; border-radius: 14px;
+      background: #fff; color: #1a1a1a;
+      cursor: pointer; transition: opacity 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+    .submit-btn:hover { opacity: 0.75; }
+    .submit-btn:active { transform: scale(0.985); }
+    .submit-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+
+
+    /* About */
+    .about {
+      max-width: 900px; margin: 0 auto;
+      padding: 48px 48px 64px;
+    }
+    .about-content p {
+      font-size: clamp(18px, 2.5vw, 22px); color: #555; line-height: 1.6;
+      letter-spacing: -0.01em; max-width: 600px; margin-left: auto; margin-right: auto;
+    }
+    .about-content p + p, .about-content ul + p, .about-content p + ul { margin-top: 16px; }
+    .about-content ul {
+      font-size: clamp(18px, 2.5vw, 22px); color: #555; line-height: 1.6;
+      letter-spacing: -0.01em; max-width: 600px; margin-left: auto; margin-right: auto;
+      padding-left: 1.2em; list-style: disc;
+    }
+    .about-content li { margin-bottom: 6px; }
+    .about-content strong { color: #1a1a1a; font-weight: 600; }
+    .about-content .desc-link {
+      color: #555; text-decoration: underline;
+      text-underline-offset: 3px; text-decoration-color: #ccc;
+      transition: color 0.2s;
+    }
+    .about-content .desc-link:hover { color: #1a1a1a; text-decoration-color: #1a1a1a; }
+
+    footer {
+      text-align: center; padding: 48px;
+      font-size: 12px; color: #ccc;
+      border-top: 1px solid #eae8e4;
+    }
+    .footer-note {
+      margin-top: 8px; font-size: 11px; color: #ccc;
+    }
+    .footer-note a {
+      color: #aaa; text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .footer-note a:hover { color: #666; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+      padding: 16px 28px; border-radius: 14px;
+      font-size: 15px; font-weight: 600; z-index: 200;
+      transition: bottom 0.4s cubic-bezier(0.16,1,0.3,1);
+      max-width: 480px; text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+    .toast.visible { bottom: 32px; }
+    .toast.success { background: #fff; border: 1px solid #eae8e4; color: #1a1a1a; }
+    .toast.error { background: #fff; border: 1px solid #e8c4c0; color: #c0392b; }
+
+    .loading {
+      text-align: center; padding: 200px 20px;
+      color: #ccc; font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+      nav { padding: 20px 24px; }
+      .hero { padding: 100px 24px 0; }
+      .grid { padding: 0 20px 60px; }
+      .grid-inner { grid-template-columns: 1fr; padding: 32px 24px; border-radius: 28px; }
+      .detail-row { grid-template-columns: 1fr 1fr; }
+      .image-section { padding: 0 24px 60px; }
+      .about { padding: 48px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-logo" id="navLogo">Design & AI</a>
+    <div class="nav-right" id="navRight"></div>
+  </nav>
+
+  <div id="content"><div class="loading">Loading...</div></div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const slug = window.location.pathname.split("/event/")[1];
+    const toast = document.getElementById("toast");
+
+    function formatText(text) {
+      // Extract links before escaping, replace with placeholders
+      // Use non-greedy match and stop at ), not consuming nested [ or next link
+      const links = [];
+      const withPlaceholders = text.replace(/\[([^\]]+)\]\(([^)\[\]]*)\)/g, (_, label, url) => {
+        links.push({ label, url: url.replace(/,\s*$/, '') });
+        return `__LINK_${links.length - 1}__`;
+      });
+      let result = esc(withPlaceholders);
+      // Restore links
+      links.forEach((l, i) => {
+        result = result.replace(`__LINK_${i}__`, `<a href="${esc(l.url)}" target="_blank" rel="noopener" class="desc-link">${esc(l.label)}</a>`);
+      });
+      // Bold
+      result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      return result;
+    }
+
+    // Load site title
+    fetch("/api/settings").then(r => r.json()).then(s => {
+      if (s.site_title) {
+        document.getElementById("navLogo").textContent = s.site_title;
+      }
+    }).catch(() => {});
+    let toastTimer;
+
+    function showToast(msg, type) {
+      clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.className = "toast " + type;
+      requestAnimationFrame(() => toast.classList.add("visible"));
+      toastTimer = setTimeout(() => toast.classList.remove("visible"), 5000);
+    }
+
+    function esc(s) { const d = document.createElement("div"); d.textContent = s || ""; return d.innerHTML; }
+
+    async function loadEvent() {
+      try {
+        const res = await fetch("/api/events/" + slug);
+        if (!res.ok) { document.getElementById("content").innerHTML = '<div class="loading">Event not found.</div>'; return; }
+        const e = await res.json();
+
+        document.title = e.title.replace(/\n/g, " ") + " — Design & AI";
+        document.getElementById("navRight").textContent = e.event_date;
+
+        document.getElementById("content").innerHTML = `
+          <section class="hero">
+            <span class="hero-badge">${e.price.toLowerCase() === 'free' ? 'Free Event' : esc(e.price)}</span>
+            <h1>${esc(e.title)}</h1>
+            ${e.subtitle ? `<p class="hero-sub">${esc(e.subtitle)}</p>` : ''}
+          </section>
+
+          <section class="grid">
+           <img src="/background.svg" class="grid-bg" alt="">
+           <div class="grid-inner">
+            <div class="details">
+              <div class="detail-row">
+                <div class="detail-item">
+                  <p class="label">Date</p>
+                  <p class="value">${esc(e.event_date)}</p>
+                  <p class="sub">${esc(e.event_day)}</p>
+                </div>
+                <div class="detail-item">
+                  <p class="label">Time</p>
+                  <p class="value">${esc(e.event_time)}</p>
+                  <p class="sub">${esc(e.doors_time)}</p>
+                </div>
+              </div>
+              <div class="detail-row">
+                <div class="detail-item">
+                  <p class="label">Location</p>
+                  <p class="value">${esc(e.location_name)}</p>
+                  <p class="sub"><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location_name + ', ' + e.location_address)}" target="_blank" rel="noopener" class="map-link">${esc(e.location_address)}</a></p>
+                </div>
+                <div class="detail-item">
+                  <p class="label">Price</p>
+                  <p class="value">${esc(e.price)}</p>
+                </div>
+              </div>
+              <div class="spots-block">
+                <span class="spots-number ${e.available <= 5 ? 'low' : ''}" id="spotsNumber">${e.available}</span>
+                <span class="spots-label" id="spotsLabel">${e.available <= 0 ? 'spots left — waitlist open' : 'spots left'}</span>
+              </div>
+              <p class="waitlist-note">There is a waiting list in case things are getting tight.</p>
+            </div>
+
+            <div class="rsvp">
+              <h2 id="rsvpTitle">${e.available > 0 ? 'Reserve your spot' : 'Join the waitlist'}</h2>
+              <p class="rsvp-sub" id="rsvpSub">${e.available > 0
+                ? "Enter your name and email. You'll get a confirmation with all the details."
+                : "This event is full, but you can join the waitlist. We'll notify you if a spot opens up."}</p>
+              <form class="rsvp-form" id="rsvpForm">
+                <input type="text" id="nameInput" placeholder="Your name" required autocomplete="name">
+                <input type="email" id="emailInput" placeholder="Email address" required autocomplete="email">
+                <button type="submit" class="submit-btn" id="submitBtn">${e.available > 0 ? 'Reserve spot' : 'Join waitlist'}</button>
+              </form>
+            </div>
+           </div>
+          </section>
+
+          ${e.description ? `
+          <section class="about">
+            <div class="about-content">
+              ${e.description.split(/\n\n+/).map(block => {
+                const lines = block.trim().split(/\n/);
+                const isList = lines.every(l => /^[\-\*]\s/.test(l.trim()));
+                if (isList) {
+                  return '<ul>' + lines.map(l => `<li>${formatText(l.trim().replace(/^[\-\*]\s+/, ''))}</li>`).join('') + '</ul>';
+                }
+                return `<p>${formatText(block.trim())}</p>`;
+              }).join('')}
+            </div>
+          </section>` : ''}
+
+          <footer>
+            Design & AI
+            <p class="footer-note">This RSVP tool is free to use. <a href="https://github.com/frankerler/rvsp" target="_blank" rel="noopener">Fork it on GitHub</a>.</p>
+          </footer>
+        `;
+
+        const form = document.getElementById("rsvpForm");
+        const btn = document.getElementById("submitBtn");
+        const spotsEl = document.getElementById("spotsNumber");
+
+        function updateRsvpUI(available) {
+          spotsEl.textContent = available;
+          if (available <= 5) spotsEl.classList.add("low");
+          document.getElementById("spotsLabel").textContent = available <= 0 ? 'spots left — waitlist open' : 'spots left';
+          const rsvpTitle = document.getElementById("rsvpTitle");
+          const rsvpSub = document.getElementById("rsvpSub");
+          if (available <= 0) {
+            btn.textContent = "Join waitlist";
+            rsvpTitle.textContent = "Join the waitlist";
+            rsvpSub.textContent = "This event is full, but you can join the waitlist. We'll notify you if a spot opens up.";
+          } else {
+            btn.textContent = "Reserve spot";
+            rsvpTitle.textContent = "Reserve your spot";
+            rsvpSub.textContent = "Enter your name and email. You'll get a confirmation with all the details.";
+          }
+          btn.disabled = false;
+        }
+
+        form.addEventListener("submit", async (ev) => {
+          ev.preventDefault();
+          btn.disabled = true; btn.textContent = "Reserving...";
+          const name = document.getElementById("nameInput").value.trim();
+          const email = document.getElementById("emailInput").value.trim();
+          try {
+            const r = await fetch("/api/events/" + slug + "/rsvp", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, email }),
+            });
+            const d = await r.json();
+            if (d.success) {
+              if (d.waitlisted) {
+                showToast("You're #" + d.position + " on the waitlist. We'll email you if a spot opens up.", "success");
+              } else {
+                showToast("You're in — check your email for confirmation.", "success");
+              }
+              updateRsvpUI(d.available);
+              form.reset();
+            } else {
+              showToast(d.error, "error");
+              btn.disabled = false;
+              btn.textContent = e.available <= 0 ? "Join waitlist" : "Reserve spot";
+            }
+          } catch {
+            showToast("Something went wrong.", "error");
+            btn.disabled = false;
+            btn.textContent = e.available <= 0 ? "Join waitlist" : "Reserve spot";
+          }
+        });
+      } catch {
+        document.getElementById("content").innerHTML = '<div class="loading">Failed to load event.</div>';
+      }
+    }
+
+    loadEvent();
+  </script>
+</body>
+</html>

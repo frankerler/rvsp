@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Design & AI</title>
+  <style>
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+    @font-face { font-family: 'Archivo'; src: url('/fonts/Archivo-Bold.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background: #faf9f7; color: #1a1a1a;
+      -webkit-font-smoothing: antialiased; min-height: 100vh;
+    }
+
+    /* Login */
+    .login-overlay {
+      position: fixed; inset: 0; background: #faf9f7;
+      display: flex; align-items: center; justify-content: center; z-index: 999;
+    }
+    .login-overlay.hidden { display: none; }
+    .login-box {
+      background: #fff; border: 1px solid #eae8e4;
+      border-radius: 20px; padding: 44px 36px;
+      width: 100%; max-width: 380px; text-align: center;
+    }
+    .login-box h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .login-box p { font-size: 14px; color: #999; margin-bottom: 28px; }
+    .login-box input {
+      width: 100%; font-family: inherit; font-size: 15px; padding: 14px 16px;
+      border: 1.5px solid #e0ded9; border-radius: 12px;
+      background: #faf9f7; color: #1a1a1a; outline: none; margin-bottom: 12px;
+    }
+    .login-box input:focus { border-color: #1a1a1a; }
+    .login-box input::placeholder { color: #ccc; }
+    .login-box button {
+      width: 100%; font-family: inherit; font-size: 15px; font-weight: 600;
+      padding: 14px; border: none; border-radius: 12px;
+      background: #1a1a1a; color: #faf9f7; cursor: pointer;
+    }
+    .login-box button:hover { opacity: 0.75; }
+    .login-error { font-size: 13px; color: #c0392b; margin-top: 12px; display: none; }
+
+    /* Admin */
+    .admin { display: none; }
+    .admin.visible { display: block; }
+
+    .admin-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 20px 40px; border-bottom: 1px solid #eae8e4;
+    }
+    .admin-nav .logo {
+      font-size: 14px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    .admin-nav .actions { display: flex; gap: 10px; align-items: center; }
+
+    .btn {
+      font-family: inherit; font-size: 12px; font-weight: 600;
+      padding: 8px 16px; border: none; border-radius: 8px;
+      cursor: pointer; text-decoration: none;
+    }
+    .btn-outline {
+      background: transparent; border: 1px solid #ddd; color: #888;
+    }
+    .btn-outline:hover { border-color: #aaa; color: #1a1a1a; }
+    .btn-primary { background: #1a1a1a; color: #faf9f7; }
+    .btn-primary:hover { opacity: 0.75; }
+    .btn-delete {
+      background: transparent; border: 1px solid #e8c4c0; color: #c0392b;
+    }
+    .btn-delete:hover { background: #fdf0ef; }
+
+    .admin-body { max-width: 900px; margin: 0 auto; padding: 40px; }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Section header */
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+    }
+    .section-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+
+    /* Event list */
+    .event-list-item {
+      display: grid; grid-template-columns: 1fr auto auto;
+      gap: 16px; align-items: center;
+      padding: 24px 0;
+      border-top: 1px solid #eae8e4;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .event-list-item:last-child { border-bottom: 1px solid #eae8e4; }
+    .event-list-item:hover { opacity: 0.6; }
+
+    .eli-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .eli-meta { font-size: 13px; color: #999; }
+
+    .eli-stats { display: flex; gap: 16px; font-size: 13px; color: #999; }
+    .eli-stats strong { color: #1a1a1a; }
+
+    .eli-actions { display: flex; gap: 8px; }
+
+    .status-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; margin-right: 6px; vertical-align: middle;
+    }
+    .status-dot.active { background: #2ecc71; }
+    .status-dot.inactive { background: #ccc; }
+
+    /* Editor cards */
+    .editor-card {
+      background: #fff; border: 1px solid #eae8e4;
+      border-radius: 16px; padding: 28px 24px; margin-bottom: 16px;
+    }
+    .editor-card h3 {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: #bbb; margin-bottom: 20px;
+    }
+
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: #999; margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%; font-family: inherit; font-size: 14px; padding: 12px 14px;
+      border: 1.5px solid #e0ded9; border-radius: 10px;
+      background: #faf9f7; color: #1a1a1a; outline: none;
+    }
+    .field input:focus, .field textarea:focus { border-color: #1a1a1a; }
+    .field textarea { resize: vertical; min-height: 100px; line-height: 1.6; }
+    .field select { cursor: pointer; }
+    .field .hint { font-size: 12px; color: #bbb; margin-top: 4px; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    .editor-actions {
+      display: flex; gap: 12px; justify-content: space-between; margin-top: 8px;
+    }
+    .editor-actions-left { display: flex; gap: 10px; }
+
+    /* Guest list */
+    .add-form { display: flex; gap: 10px; margin-bottom: 20px; }
+    .add-form input {
+      flex: 1; font-family: inherit; font-size: 14px; padding: 12px 14px;
+      border: 1.5px solid #e0ded9; border-radius: 10px;
+      background: #faf9f7; color: #1a1a1a; outline: none;
+    }
+    .add-form input:focus { border-color: #1a1a1a; }
+    .add-form input::placeholder { color: #ccc; }
+
+    .guest-table { width: 100%; border-collapse: collapse; }
+    .guest-table th {
+      text-align: left; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      color: #bbb; padding: 10px 12px;
+      border-bottom: 1px solid #eae8e4;
+    }
+    .guest-table td {
+      font-size: 13px; padding: 14px 12px; color: #666;
+      border-bottom: 1px solid #f0eee9;
+    }
+    .guest-table tr:hover td { background: #f8f7f5; }
+
+    .empty { text-align: center; padding: 40px; color: #ccc; font-size: 14px; }
+
+    /* Toast */
+    .admin-toast {
+      position: fixed; bottom: -80px; left: 50%; transform: translateX(-50%);
+      padding: 14px 24px; border-radius: 12px; font-size: 13px; font-weight: 600;
+      background: #fff; border: 1px solid #eae8e4; color: #1a1a1a;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+      z-index: 200; transition: bottom 0.4s cubic-bezier(0.16,1,0.3,1);
+    }
+    .admin-toast.visible { bottom: 32px; }
+
+    @media (max-width: 640px) {
+      .admin-body { padding: 24px 20px; }
+      .field-row, .field-row-3 { grid-template-columns: 1fr; }
+      .event-list-item { grid-template-columns: 1fr; gap: 12px; }
+      .add-form { flex-direction: column; }
+      .editor-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-box">
+      <h1>Admin</h1>
+      <p>Enter the admin password to continue.</p>
+      <form id="loginForm">
+        <input type="password" id="passwordInput" placeholder="Password" autocomplete="current-password">
+        <button type="submit">Log in</button>
+      </form>
+      <p class="login-error" id="loginError">Wrong password. Try again.</p>
+    </div>
+  </div>
+
+  <div class="admin" id="adminPanel">
+    <div class="admin-nav">
+      <span class="logo">Admin — Design & AI</span>
+      <div class="actions">
+        <a href="/" class="btn btn-outline">View Site</a>
+        <button class="btn btn-outline" onclick="logout()">Log out</button>
+      </div>
+    </div>
+
+    <div class="admin-body">
+      <div class="view active" id="viewList">
+        <div class="editor-card" style="margin-bottom:32px;">
+          <h3>Site Settings</h3>
+          <div class="field-row-3">
+            <div class="field">
+              <label>Site Title</label>
+              <input type="text" id="set_site_title" placeholder="Design & AI">
+            </div>
+            <div class="field">
+              <label>Page Headline</label>
+              <input type="text" id="set_page_title" placeholder="Upcoming Events">
+            </div>
+            <div class="field">
+              <label>Page Subtitle</label>
+              <input type="text" id="set_page_subtitle" placeholder="Find an event, reserve your spot.">
+            </div>
+          </div>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="saveSettings()">Save Settings</button>
+        </div>
+
+        <div class="section-header">
+          <h2 class="section-title">Events</h2>
+          <button class="btn btn-primary" onclick="createNewEvent()">+ New Event</button>
+        </div>
+        <div id="eventList"></div>
+      </div>
+
+      <div class="view" id="viewEditor">
+        <div class="section-header">
+          <h2 class="section-title" id="editorTitle">Edit Event</h2>
+          <button class="btn btn-outline" onclick="showView('list')">Back to Events</button>
+        </div>
+
+        <div class="editor-card">
+          <h3>Content</h3>
+          <div class="field">
+            <label>Title</label>
+            <textarea id="ed_title" rows="2"></textarea>
+          </div>
+          <div class="field">
+            <label>Subtitle</label>
+            <input type="text" id="ed_subtitle">
+          </div>
+          <div class="field">
+            <label>Description</label>
+            <textarea id="ed_description" rows="8"></textarea>
+            <p class="hint">Blank lines = new paragraph. **bold** for bold. [text](url) for links. Lines starting with - or * become list items.</p>
+          </div>
+        </div>
+
+        <div class="editor-card">
+          <h3>Details</h3>
+          <div class="field-row">
+            <div class="field">
+              <label>Date</label>
+              <input type="text" id="ed_event_date" placeholder="May 15, 2026">
+            </div>
+            <div class="field">
+              <label>Day</label>
+              <input type="text" id="ed_event_day" placeholder="Thursday">
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field">
+              <label>Time</label>
+              <input type="text" id="ed_event_time" placeholder="6:30 PM">
+            </div>
+            <div class="field">
+              <label>Doors</label>
+              <input type="text" id="ed_doors_time" placeholder="Doors at 6:00">
+            </div>
+          </div>
+          <div class="field-row" style="margin-top:12px;">
+            <div class="field">
+              <label>Location name</label>
+              <input type="text" id="ed_location_name">
+            </div>
+            <div class="field">
+              <label>Address</label>
+              <input type="text" id="ed_location_address">
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-card">
+          <h3>Settings</h3>
+          <div class="field-row-3">
+            <div class="field">
+              <label>URL slug</label>
+              <input type="text" id="ed_slug">
+            </div>
+            <div class="field">
+              <label>Price</label>
+              <input type="text" id="ed_price" placeholder="Free">
+            </div>
+            <div class="field">
+              <label>Max spots</label>
+              <input type="number" id="ed_max_spots" min="1">
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label>Status</label>
+            <select id="ed_is_active">
+              <option value="1">Active (visible on site)</option>
+              <option value="0">Inactive (hidden)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="editor-actions">
+          <div class="editor-actions-left">
+            <button class="btn btn-primary" onclick="saveEvent()">Save Changes</button>
+            <button class="btn btn-outline" onclick="showView('list')">Cancel</button>
+          </div>
+          <button class="btn btn-delete" onclick="deleteCurrentEvent()">Delete Event</button>
+        </div>
+
+        <div class="editor-card" style="margin-top:32px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <h3 style="margin-bottom:0;">Confirmed (<span id="guestCount">0</span>)</h3>
+            <button class="btn btn-outline" onclick="downloadCSV()">Download CSV</button>
+          </div>
+          <div class="add-form">
+            <input type="text" id="addGuestName" placeholder="Name">
+            <input type="email" id="addGuestEmail" placeholder="Email">
+            <button class="btn btn-primary" onclick="addGuest()">+ Add</button>
+          </div>
+          <div id="guestTableContainer"></div>
+        </div>
+
+        <div class="editor-card">
+          <h3>Waitlist (<span id="waitlistCount">0</span>)</h3>
+          <div id="waitlistTableContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-toast" id="adminToast"></div>
+
+  <script>
+    let token = sessionStorage.getItem("admin_token") || "";
+    let currentEventId = null;
+
+    function showToast(msg) {
+      const t = document.getElementById("adminToast");
+      t.textContent = msg; t.classList.add("visible");
+      setTimeout(() => t.classList.remove("visible"), 3000);
+    }
+
+    function esc(s) {
+      const d = document.createElement("div");
+      d.textContent = s || "";
+      return d.innerHTML;
+    }
+
+    function api(path, opts = {}) {
+      return fetch(path, {
+        ...opts,
+        headers: { "Authorization": "Basic " + token, "Content-Type": "application/json", ...opts.headers },
+      });
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await api("/api/settings");
+        const s = await res.json();
+        document.getElementById("set_site_title").value = s.site_title || "";
+        document.getElementById("set_page_title").value = (s.page_title || "").replace(/\n/g, " ");
+        document.getElementById("set_page_subtitle").value = s.page_subtitle || "";
+      } catch {}
+    }
+
+    async function saveSettings() {
+      const data = {
+        site_title: document.getElementById("set_site_title").value,
+        page_title: document.getElementById("set_page_title").value,
+        page_subtitle: document.getElementById("set_page_subtitle").value,
+      };
+      const res = await api("/api/admin/settings", {
+        method: "PUT", body: JSON.stringify(data),
+      });
+      if (res.ok) showToast("Settings saved.");
+      else showToast("Failed to save settings.");
+    }
+
+    if (token) tryAuth();
+
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      token = btoa(document.getElementById("passwordInput").value);
+      sessionStorage.setItem("admin_token", token);
+      tryAuth();
+    });
+
+    async function tryAuth() {
+      try {
+        const res = await api("/api/admin/events");
+        if (res.ok) {
+          document.getElementById("loginOverlay").classList.add("hidden");
+          document.getElementById("adminPanel").classList.add("visible");
+          loadSettings();
+          loadEventList();
+        } else {
+          sessionStorage.removeItem("admin_token");
+          document.getElementById("loginError").style.display = "block";
+        }
+      } catch { document.getElementById("loginError").style.display = "block"; }
+    }
+
+    function logout() {
+      sessionStorage.removeItem("admin_token"); token = "";
+      location.reload();
+    }
+
+    function showView(name) {
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      document.getElementById("view" + name.charAt(0).toUpperCase() + name.slice(1)).classList.add("active");
+      if (name === "list") loadEventList();
+    }
+
+    async function loadEventList() {
+      const res = await api("/api/admin/events");
+      const events = await res.json();
+      const container = document.getElementById("eventList");
+      if (!events.length) {
+        container.innerHTML = '<div class="empty">No events yet. Create your first one.</div>';
+        return;
+      }
+      container.innerHTML = events.map(e => {
+        const title = (e.title || "Untitled").replace(/\n/g, " ");
+        return `
+        <div class="event-list-item" onclick="editEvent(${e.id})">
+          <div>
+            <div class="eli-title">
+              <span class="status-dot ${e.is_active ? 'active' : 'inactive'}"></span>
+              ${esc(title)}
+            </div>
+            <div class="eli-meta">/event/${esc(e.slug)} — ${esc(e.event_date)} ${esc(e.event_time)}</div>
+          </div>
+          <div class="eli-stats">
+            <span><strong>${e.taken}</strong> registered</span>
+            <span><strong>${e.available}</strong> left</span>
+            ${e.waitlisted ? `<span><strong>${e.waitlisted}</strong> waitlisted</span>` : ''}
+          </div>
+          <div class="eli-actions" onclick="event.stopPropagation()">
+            <a href="/event/${esc(e.slug)}" target="_blank" class="btn btn-outline" style="font-size:11px;padding:6px 12px;">View</a>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    async function createNewEvent() {
+      const res = await api("/api/admin/events", {
+        method: "POST",
+        body: JSON.stringify({
+          slug: "event-" + Date.now().toString(36),
+          title: "New Event",
+          max_spots: 30, price: "Free", is_active: 0,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) { showToast("Event created."); editEvent(data.id); }
+    }
+
+    async function editEvent(id) {
+      currentEventId = id;
+      const res = await api("/api/admin/events");
+      const events = await res.json();
+      const e = events.find(ev => ev.id === id);
+      if (!e) return;
+
+      // Merge description + description2 into one field (for legacy data)
+      let desc = e.description || "";
+      if (e.description2) desc += "\n\n" + e.description2;
+
+      document.getElementById("editorTitle").textContent = "Edit: " + (e.title || "Untitled").replace(/\n/g, " ");
+      document.getElementById("ed_title").value = e.title || "";
+      document.getElementById("ed_subtitle").value = e.subtitle || "";
+      document.getElementById("ed_description").value = desc;
+      document.getElementById("ed_event_date").value = e.event_date || "";
+      document.getElementById("ed_event_day").value = e.event_day || "";
+      document.getElementById("ed_event_time").value = e.event_time || "";
+      document.getElementById("ed_doors_time").value = e.doors_time || "";
+      document.getElementById("ed_location_name").value = e.location_name || "";
+      document.getElementById("ed_location_address").value = e.location_address || "";
+      document.getElementById("ed_slug").value = e.slug || "";
+      document.getElementById("ed_price").value = e.price || "Free";
+      document.getElementById("ed_max_spots").value = e.max_spots || 30;
+      document.getElementById("ed_is_active").value = e.is_active ? "1" : "0";
+
+      showView("editor");
+      loadGuests();
+    }
+
+    async function saveEvent() {
+      const fullDesc = document.getElementById("ed_description").value;
+      // Split into description + description2 on first double-newline for DB compat
+      const parts = fullDesc.split(/\n\n(.+)/s);
+      const data = {
+        title: document.getElementById("ed_title").value,
+        subtitle: document.getElementById("ed_subtitle").value,
+        description: fullDesc,
+        description2: "",
+        event_date: document.getElementById("ed_event_date").value,
+        event_day: document.getElementById("ed_event_day").value,
+        event_time: document.getElementById("ed_event_time").value,
+        doors_time: document.getElementById("ed_doors_time").value,
+        location_name: document.getElementById("ed_location_name").value,
+        location_address: document.getElementById("ed_location_address").value,
+        slug: document.getElementById("ed_slug").value,
+        price: document.getElementById("ed_price").value,
+        max_spots: parseInt(document.getElementById("ed_max_spots").value),
+        is_active: parseInt(document.getElementById("ed_is_active").value),
+      };
+      const res = await api("/api/admin/events/" + currentEventId, {
+        method: "PUT", body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        showToast("Event saved.");
+        document.getElementById("editorTitle").textContent = "Edit: " + (data.title || "Untitled").replace(/\n/g, " ");
+      } else {
+        const err = await res.json();
+        showToast(err.error || "Failed to save.");
+      }
+    }
+
+    async function deleteCurrentEvent() {
+      if (!confirm("Delete this event and all its RSVPs? This cannot be undone.")) return;
+      await api("/api/admin/events/" + currentEventId, { method: "DELETE" });
+      showToast("Event deleted.");
+      showView("list");
+    }
+
+    async function loadGuests() {
+      const res = await api("/api/admin/events/" + currentEventId + "/guests");
+      const guests = await res.json();
+      const confirmed = guests.filter(g => g.status !== "waitlisted");
+      const waitlisted = guests.filter(g => g.status === "waitlisted");
+
+      document.getElementById("guestCount").textContent = confirmed.length;
+      document.getElementById("waitlistCount").textContent = waitlisted.length;
+
+      const container = document.getElementById("guestTableContainer");
+      if (!confirmed.length) {
+        container.innerHTML = '<div class="empty">No confirmed guests yet.</div>';
+      } else {
+        container.innerHTML = `
+          <table class="guest-table">
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Date</th><th></th></tr></thead>
+            <tbody>${confirmed.map((g, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${esc(g.name)}</td>
+                <td>${esc(g.email)}</td>
+                <td>${new Date(g.created_at + "Z").toLocaleDateString()}</td>
+                <td><button class="btn btn-delete" style="font-size:11px;padding:5px 10px;" onclick="removeGuest('${esc(g.token)}')">Remove</button></td>
+              </tr>`).join("")}
+            </tbody>
+          </table>`;
+      }
+
+      const wContainer = document.getElementById("waitlistTableContainer");
+      if (!waitlisted.length) {
+        wContainer.innerHTML = '<div class="empty">No one on the waitlist.</div>';
+      } else {
+        wContainer.innerHTML = `
+          <table class="guest-table">
+            <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Date</th><th></th></tr></thead>
+            <tbody>${waitlisted.map((g, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${esc(g.name)}</td>
+                <td>${esc(g.email)}</td>
+                <td>${new Date(g.created_at + "Z").toLocaleDateString()}</td>
+                <td><button class="btn btn-delete" style="font-size:11px;padding:5px 10px;" onclick="removeGuest('${esc(g.token)}')">Remove</button></td>
+              </tr>`).join("")}
+            </tbody>
+          </table>`;
+      }
+    }
+
+    async function addGuest() {
+      const name = document.getElementById("addGuestName").value.trim();
+      const email = document.getElementById("addGuestEmail").value.trim();
+      if (!name || !email) return;
+      const res = await api("/api/admin/events/" + currentEventId + "/guests", {
+        method: "POST", body: JSON.stringify({ name, email }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById("addGuestName").value = "";
+        document.getElementById("addGuestEmail").value = "";
+        showToast("Guest added.");
+        loadGuests();
+      } else { showToast(data.error || "Failed."); }
+    }
+
+    async function downloadCSV() {
+      const res = await api("/api/admin/events/" + currentEventId + "/guests");
+      const guests = await res.json();
+      if (!guests.length) { showToast("No guests to export."); return; }
+      const lines = ["Name,Email,Status,Date"];
+      guests.forEach(g => {
+        const date = new Date(g.created_at + "Z").toLocaleDateString();
+        lines.push(`"${g.name.replace(/"/g, '""')}","${g.email}","${g.status}","${date}"`);
+      });
+      const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "guests.csv"; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function removeGuest(guestToken) {
+      await api("/api/admin/guests/" + guestToken, { method: "DELETE" });
+      showToast("Guest removed.");
+      loadGuests();
+    }
+  </script>
+</body>
+</html>
