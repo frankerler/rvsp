@@ -428,6 +428,12 @@ app.get("/cancel/:token", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "cancel.html"));
 });
 
+// Custom admin route
+const ADMIN_PATH = process.env.ADMIN_PATH || "/admin.html";
+app.get(ADMIN_PATH, (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
+});
+
 // ── Admin API ──
 
 // List all events (including inactive)
