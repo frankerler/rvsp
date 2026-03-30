@@ -21,7 +21,10 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin";
 
 // ── Database ──
-const db = new Database(path.join(__dirname, "rsvp.db"));
+const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH
+  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "rsvp.db")
+  : path.join(__dirname, "rsvp.db");
+const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
 
 db.exec(`
