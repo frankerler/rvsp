@@ -140,16 +140,91 @@ const stmts = {
 
 // ── Email ──
 let transporter = null;
-if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+let resendClient = null;
+
+if (process.env.RESEND_API_KEY) {
+  // Use Resend (HTTP-based, works on Railway/cloud)
+  const { Resend } = require("resend");
+  resendClient = new Resend(process.env.RESEND_API_KEY);
+  console.log("Email configured via Resend");
+} else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+  // Use SMTP (works locally)
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || "587", 10),
     secure: process.env.SMTP_PORT === "465",
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   });
-  console.log("Email configured:", process.env.SMTP_USER);
+  console.log("Email configured via SMTP:", process.env.SMTP_USER);
 } else {
-  console.log("Email not configured — set SMTP_HOST, SMTP_USER, SMTP_PASS in .env");
+  console.log("Email not configured — set RESEND_API_KEY or SMTP_HOST/SMTP_USER/SMTP_PASS in .env");
+}
+
+// Gmail API transport (HTTP-based, bypasses SMTP port blocking)
+async function sendViaGmailAPI({ to, subject, html }) {
+  // Get access token from refresh token
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GMAIL_CLIENT_ID,
+      client_secret: process.env.GMAIL_CLIENT_SECRET,
+      refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+      grant_type: "refresh_token",
+    }),
+  });
+  const tokenData = await tokenRes.json();
+  if (!tokenData.access_token) throw new Error("Gmail OAuth failed: " + JSON.stringify(tokenData));
+
+  const user = process.env.GMAIL_USER || process.env.SMTP_USER;
+  const fromName = process.env.EMAIL_FROM_NAME || "Design & AI";
+  const messageId = `<${Date.now()}.${Math.random().toString(36).slice(2)}@gmail.com>`;
+  const rawEmail = [
+    `From: =?UTF-8?B?${Buffer.from(fromName).toString("base64")}?= <${user}>`,
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${Buffer.from(subject).toString("base64")}?=`,
+    `Message-ID: ${messageId}`,
+    `Date: ${new Date().toUTCString()}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=utf-8",
+    "",
+    html,
+  ].join("\r\n");
+
+  const encodedEmail = Buffer.from(rawEmail).toString("base64url");
+
+  const res = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ raw: encodedEmail }),
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Gmail API error: ${err}`);
+  }
+  return res.json();
+}
+
+const useGmailAPI = !!(process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.GMAIL_REFRESH_TOKEN);
+if (useGmailAPI) console.log("Email configured via Gmail API");
+
+function sendMail({ to, subject, html }) {
+  if (useGmailAPI) {
+    return sendViaGmailAPI({ to, subject, html });
+  }
+  const from = process.env.EMAIL_FROM || process.env.SMTP_USER || "noreply@example.com";
+  if (resendClient) {
+    return resendClient.emails.send({ from, to, subject, html });
+  } else if (transporter) {
+    return transporter.sendMail({ from, to, subject, html });
+  } else {
+    console.log("Skipping email (not configured) for:", to);
+    return Promise.resolve();
+  }
 }
 
 function emailLayout(heading, intro, event, footerHtml) {
@@ -232,15 +307,10 @@ function emailLayout(heading, intro, event, footerHtml) {
 }
 
 function sendConfirmation(event, name, email, token) {
-  if (!transporter) {
-    console.log("Skipping email (not configured) for:", email);
-    return Promise.resolve();
-  }
   const cancelUrl = `${BASE_URL}/cancel/${token}`;
   const title = event.title.replace(/\n/g, " ");
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+  return sendMail({
     to: email,
     subject: `You're in — ${title}`,
     html: emailLayout(
@@ -258,14 +328,9 @@ function sendConfirmation(event, name, email, token) {
 }
 
 function sendWaitlistConfirmation(event, name, email, position) {
-  if (!transporter) {
-    console.log("Skipping waitlist email (not configured) for:", email);
-    return Promise.resolve();
-  }
   const title = event.title.replace(/\n/g, " ");
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+  return sendMail({
     to: email,
     subject: `You're on the waitlist — ${title}`,
     html: emailLayout(
@@ -280,15 +345,10 @@ function sendWaitlistConfirmation(event, name, email, position) {
 }
 
 function sendPromotionEmail(event, name, email, token) {
-  if (!transporter) {
-    console.log("Skipping promotion email (not configured) for:", email);
-    return Promise.resolve();
-  }
   const cancelUrl = `${BASE_URL}/cancel/${token}`;
   const title = event.title.replace(/\n/g, " ");
 
-  return transporter.sendMail({
-    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
+  return sendMail({
     to: email,
     subject: `A spot opened up — ${title}`,
     html: emailLayout(
