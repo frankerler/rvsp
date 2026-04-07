@@ -1,21 +1,25 @@
 # RSVP Event Platform
 
-A lightweight, self-hosted event RSVP platform built with Node.js, Express, and SQLite. Features a dark-mode event page, waitlist management with auto-promotion, styled email confirmations, and an admin panel.
+A simple, free, self-hosted RSVP tool for small events like meetups, workshops, or community gatherings. Create an event page, share the link, and let people sign up. No accounts needed for guests -- just name and email.
+
+When spots fill up, a waitlist kicks in automatically. If someone cancels, the next person on the list gets promoted and notified by email. You manage everything from a password-protected admin panel -- edit event details, track signups, and export your guest list as CSV.
+
+Built with Node.js, Express, and SQLite. No external database, no third-party services required (except for email). Deploy it on Railway or any Node.js host and you're good to go.
 
 ## Features
 
-- **Event pages** with date, time, location, and RSVP form
-- **Waitlist system** -- when an event is full, new signups join the waitlist. When a spot opens, the next person is auto-promoted and notified
-- **Email notifications** -- confirmation, waitlist, and promotion emails with styled dark-mode templates
-- **Admin panel** -- manage events, edit site settings, view guest lists, download CSV exports
-- **Markdown-like formatting** in event descriptions (bold, lists, links)
-- **Configurable admin URL and password** via environment variables
-- **SQLite database** -- no external database needed, works with persistent volumes on Railway
+- **Event pages** -- shareable dark-mode event pages with date, time, location, and RSVP form
+- **Automatic waitlist** -- when an event is full, new signups are waitlisted. When a spot opens, the next person is auto-promoted and notified by email
+- **Styled email notifications** -- confirmation, waitlist, and promotion emails with dark-mode templates matching the event page
+- **Admin panel** -- create and manage events, edit site settings, view guest lists, download CSV exports
+- **Markdown-like formatting** -- use bold, lists, and links in event descriptions
+- **Configurable admin URL and password** -- hide your admin panel behind a custom path
+- **No external database** -- SQLite with persistent volume support for cloud deployment
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/frankerler/rvsp.git
+git clone https://github.com/frankerler/rsvp.git
 cd rvsp
 npm install
 npm start
@@ -34,7 +38,7 @@ BASE_URL=http://localhost:3000
 
 # Admin panel
 ADMIN_PATH=/admin.html        # Custom URL path for the admin panel
-ADMIN_PASSWORD=admin           # Password to access the admin panel
+ADMIN_PASSWORD=admin           # CHANGE THIS — use a strong, unique password
 
 # Email (choose one of the three options below)
 EMAIL_FROM_NAME=My Event       # Display name in the From field
@@ -93,7 +97,11 @@ Sign up at [resend.com](https://resend.com), add and verify your domain, then se
 
 If none of the above are set, the app runs normally but skips sending emails. RSVPs still work -- guests just won't receive confirmation emails.
 
-## Deploy to Railway
+## Deployment
+
+This app can be deployed to any Node.js hosting platform. [Railway](https://railway.app) is a good option -- it's easy to set up, has a free trial, and supports persistent volumes for SQLite.
+
+### Railway
 
 1. Push to GitHub
 2. Create a new project on [Railway](https://railway.app) and connect your repo
@@ -102,6 +110,8 @@ If none of the above are set, the app runs normally but skips sending emails. RS
 5. Deploy
 
 The app automatically detects `RAILWAY_VOLUME_MOUNT_PATH` and stores the database on the persistent volume.
+
+Other platforms like [Render](https://render.com), [Fly.io](https://fly.io), or a simple VPS will work too -- just make sure you have a way to persist the SQLite database file.
 
 ## Admin Panel
 
